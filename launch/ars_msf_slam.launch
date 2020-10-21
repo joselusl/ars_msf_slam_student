@@ -1,0 +1,14 @@
+<!-- -->
+<launch>
+
+	<arg name="ars_msf_slam_node_name" 	default="ars_msf_slam_node" />
+	<arg name="screen" 	default="screen" />
+
+
+  <node name="$(arg ars_msf_slam_node_name)" pkg="ars_msf_slam" type="ars_msf_slam_ros_node.py" output="$(arg screen)" >
+
+
+  </node>
+
+
+</launch>

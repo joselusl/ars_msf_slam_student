@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>ars_msf_slam</name>
+  <version>0.0.1</version>
+  <description>The ars_msf_slam</description>
+
+  <maintainer email="joseluis.sanlop@gmail.com">Jose Luis SANCHEZ-LOPEZ</maintainer>
+  <author email="joseluis.sanlop@gmail.com">Jose Luis SANCHEZ-LOPEZ</author>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <exec_depend>rospy</exec_depend>
+  
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>tf_conversions</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+
+  <exec_depend>python-rospkg</exec_depend>
+
+  <exec_depend>ars_lib_helpers</exec_depend>
+
+</package>

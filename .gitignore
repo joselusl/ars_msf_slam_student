@@ -1,0 +1,8 @@
+*~
+
+# Temp py files
+*.pyc
+
+# CATKIN_IGNORE
+CATKIN_IGNORE
+
