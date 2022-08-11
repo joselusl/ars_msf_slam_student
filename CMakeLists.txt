@@ -8,7 +8,7 @@ catkin_python_setup()
 
 catkin_package(
   DEPENDS
-  CATKIN_DEPENDS rospy std_msgs geometry_msgs visualization_msgs nav_msgs tf_conversions tf2_ros python-rospkg ars_lib_helpers
+  CATKIN_DEPENDS rospy std_msgs geometry_msgs visualization_msgs nav_msgs tf2_ros python-rospkg ars_lib_helpers
   INCLUDE_DIRS
   LIBRARIES
 )

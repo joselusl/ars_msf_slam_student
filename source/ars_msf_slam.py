@@ -18,8 +18,6 @@ from scipy.linalg import  *
 
 import rospy
 
-import tf_conversions as tf
-
 
 
 #

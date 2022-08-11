@@ -17,7 +17,6 @@
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
-  <exec_depend>tf_conversions</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
 
   <exec_depend>python-rospkg</exec_depend>

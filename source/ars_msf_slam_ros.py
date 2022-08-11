@@ -34,8 +34,6 @@ from visualization_msgs.msg import MarkerArray
 
 
 
-import tf_conversions as tf
-
 import tf2_ros
 
 
