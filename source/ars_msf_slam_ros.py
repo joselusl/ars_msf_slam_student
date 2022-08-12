@@ -56,7 +56,6 @@ class ArsMsfSlamRos:
 
   # Robot frame
   robot_frame = None
-
   # World frame
   world_frame = None
 
@@ -89,7 +88,7 @@ class ArsMsfSlamRos:
   estim_map_world_pub = None
 
 
-  # Motion controller
+  # MSF SLAM
   msf_slam = None
   
 
@@ -99,8 +98,7 @@ class ArsMsfSlamRos:
   def __init__(self):
 
     # Robot frame
-    self.robot_frame = 'robot_base_link'
-
+    self.robot_frame = 'robot_estim_base_link'
     # World frame
     self.world_frame = 'world'
 
@@ -152,7 +150,6 @@ class ArsMsfSlamRos:
 
     
 
-
     # Publishers
 
     # Pose robot wrt world
@@ -176,6 +173,10 @@ class ArsMsfSlamRos:
     # Estim Map wrt world
     #
     self.estim_map_world_pub = rospy.Publisher('estim_map_world', MarkerArray, queue_size=1)
+
+
+    # Tf2 broadcasters
+    self.tf2_broadcaster = tf2_ros.TransformBroadcaster()
 
 
     # Timers
@@ -351,24 +352,41 @@ class ArsMsfSlamRos:
     self.estim_robot_pose_cov_pub.publish(robot_pose_cov_stamped_msg)
 
 
+    # Tf2
+    estim_robot_pose_tf2_msg = geometry_msgs.msg.TransformStamped()
+
+    estim_robot_pose_tf2_msg.header.stamp = self.msf_slam.estim_state_timestamp
+    estim_robot_pose_tf2_msg.header.frame_id = self.world_frame
+    estim_robot_pose_tf2_msg.child_frame_id = self.robot_frame
+
+    estim_robot_pose_tf2_msg.transform.translation.x = self.msf_slam.estim_robot_posi[0]
+    estim_robot_pose_tf2_msg.transform.translation.y = self.msf_slam.estim_robot_posi[1]
+    estim_robot_pose_tf2_msg.transform.translation.z = self.msf_slam.estim_robot_posi[2]
+
+    estim_robot_pose_tf2_msg.transform.rotation.w = self.msf_slam.estim_robot_atti_quat_simp[0]
+    estim_robot_pose_tf2_msg.transform.rotation.x = 0.0
+    estim_robot_pose_tf2_msg.transform.rotation.y = 0.0
+    estim_robot_pose_tf2_msg.transform.rotation.z = self.msf_slam.estim_robot_atti_quat_simp[1]
+
+    # Broadcast
+    self.tf2_broadcaster.sendTransform(estim_robot_pose_tf2_msg)
+
+
+    # End
     return
 
 
   def estimRobotVelocityPublish(self):
 
-    # TODO Finish!
-
     #
+    # Robot Velocity Wrt world
+
+    # Header
     header_wrt_world_msg = Header()
     header_wrt_world_msg.stamp = self.msf_slam.estim_state_timestamp
     header_wrt_world_msg.frame_id = self.world_frame
 
-    #
-    header_wrt_robot_msg = Header()
-    header_wrt_robot_msg.stamp = self.msf_slam.estim_state_timestamp
-    header_wrt_robot_msg.frame_id = self.robot_frame
-
-    #
+    # Twist
     robot_velocity_world_msg = Twist()
     #
     robot_velocity_world_msg.linear.x = self.msf_slam.estim_robot_velo_lin_world[0]
@@ -378,39 +396,57 @@ class ArsMsfSlamRos:
     robot_velocity_world_msg.angular.x = 0.0
     robot_velocity_world_msg.angular.y = 0.0
     robot_velocity_world_msg.angular.z = self.msf_slam.estim_robot_velo_ang_world[0]
-
-    #
-    # TODO Cov
-
-    #
-    # TODO wrt robot
-
-    #
+    
+    # TwistStamped
     robot_velocity_world_stamp_msg = TwistStamped()
     robot_velocity_world_stamp_msg.header = header_wrt_world_msg
     robot_velocity_world_stamp_msg.twist = robot_velocity_world_msg
 
-    #
+    # TwistWithCovarianceStamped
+    # TODO JL Cov
     robot_velocity_world_cov_stamp_msg = TwistWithCovarianceStamped()
     robot_velocity_world_cov_stamp_msg.header = header_wrt_world_msg
     robot_velocity_world_cov_stamp_msg.twist.twist = robot_velocity_world_msg
     # robot_velocity_world_cov_stamp_msg.twist.covariance
 
-    #
-    # TODO
-    robot_velocity_robot_stamp_msg = TwistStamped()
-    robot_velocity_robot_stamp_msg.header = header_wrt_robot_msg
-    #robot_velocity_robot_stamp_msg.twist = robot_velocity_robot_msg
 
     #
-    # TODO
+    # Robot velocity wrt robot
+
+    # computation estim robot velocity robot
+    estim_robot_vel_lin_robot = ars_lib_helpers.Conversions.convertVelLinFromWorldToRobot(self.msf_slam.estim_robot_velo_lin_world, self.msf_slam.estim_robot_atti_quat_simp, flag_quat_simp=True)
+    estim_robot_vel_ang_robot = ars_lib_helpers.Conversions.convertVelAngFromWorldToRobot(self.msf_slam.estim_robot_velo_ang_world, self.msf_slam.estim_robot_atti_quat_simp, flag_quat_simp=True)
+
+    # Header
+    header_wrt_robot_msg = Header()
+    header_wrt_robot_msg.stamp = self.msf_slam.estim_state_timestamp
+    header_wrt_robot_msg.frame_id = self.robot_frame
+
+    # Twist
+    robot_velocity_robot_msg = Twist()
+    #
+    robot_velocity_robot_msg.linear.x = estim_robot_vel_lin_robot[0]
+    robot_velocity_robot_msg.linear.y = estim_robot_vel_lin_robot[1]
+    robot_velocity_robot_msg.linear.z = estim_robot_vel_lin_robot[2]
+    #
+    robot_velocity_robot_msg.angular.x = 0.0
+    robot_velocity_robot_msg.angular.y = 0.0
+    robot_velocity_robot_msg.angular.z = estim_robot_vel_ang_robot[0]
+
+    # TwistStamped
+    robot_velocity_robot_stamp_msg = TwistStamped()
+    robot_velocity_robot_stamp_msg.header = header_wrt_robot_msg
+    robot_velocity_robot_stamp_msg.twist = robot_velocity_robot_msg
+
+    # TwistWithCovarianceStamped
+    # TODO JL Cov
     robot_velocity_robot_cov_stamp_msg = TwistWithCovarianceStamped()
     robot_velocity_robot_cov_stamp_msg.header = header_wrt_robot_msg
-    #robot_velocity_robot_cov_stamp_msg.twist.twist = robot_velocity_robot_msg
+    robot_velocity_robot_cov_stamp_msg.twist.twist = robot_velocity_robot_msg
     # robot_velocity_robot_cov_stamp_msg.twist.covariance
 
 
-
+    # Publish
     #
     self.estim_robot_vel_world_pub.publish(robot_velocity_world_stamp_msg)
     # 
@@ -421,7 +457,7 @@ class ArsMsfSlamRos:
     # 
     self.estim_robot_vel_robot_cov_pub.publish(robot_velocity_robot_cov_stamp_msg)
 
-    #
+    # End
     return
   
 
