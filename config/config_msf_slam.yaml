@@ -1,0 +1,29 @@
+msf_slam:
+  robot_frame: 'robot_estim_base_link'
+  world_frame: 'world'
+  state_estim_loop_freq: 50.0
+  ekf:
+    estimated_state_init:
+      state:
+        robot_position: [0.0, 0.0, 1.0]
+        robot_atti_quat_simp: [1.0, 0.0]
+        robot_vel_lin_world: [0.0, 0.0, 0.0]
+        robot_vel_ang_world: [0.0]
+      cov_diag: [1.0, 1.0, 1.0, 
+            1.0, 
+            1.0, 1.0, 1.0,
+            1.0]
+    process_model:
+      cov_diag: [1.0, 1.0, 1.0, 
+            1.0]
+    measurements:
+      meas_attitude:
+        cov_diag: [1.0]
+      meas_velo_lin:
+        cov_diag: [1.0, 1.0, 1.0]
+      meas_velo_ang:
+        cov_diag: [1.0]
+      meas_circles_detector:
+        cov_diag: [1.0, 1.0, 1.0,
+                    1.0]
+

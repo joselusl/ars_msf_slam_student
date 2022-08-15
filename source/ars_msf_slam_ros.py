@@ -5,7 +5,9 @@ from numpy import *
 
 import os
 
-
+# pyyaml - https://pyyaml.org/wiki/PyYAMLDocumentation
+import yaml
+from yaml.loader import SafeLoader
 
 
 # ROS
@@ -88,6 +90,10 @@ class ArsMsfSlamRos:
   estim_map_world_pub = None
 
 
+  #
+  config_param = None
+  
+
   # MSF SLAM
   msf_slam = None
   
@@ -128,9 +134,38 @@ class ArsMsfSlamRos:
 
     #### READING PARAMETERS ###
     
-    # 
+    # Config param
+    default_config_param_yaml_file_name = os.path.join(pkg_path,'config','config_msf_slam.yaml')
+    config_param_yaml_file_name_str = rospy.get_param('~config_param_msf_slam_yaml_file', default_config_param_yaml_file_name)
+    print(config_param_yaml_file_name_str)
+    self.config_param_yaml_file_name = os.path.abspath(config_param_yaml_file_name_str)
 
     ###
+
+
+    # Load config param
+    with open(self.config_param_yaml_file_name,'r') as file:
+        # The FullLoader parameter handles the conversion from YAML
+        # scalar values to Python the dictionary format
+        self.config_param = yaml.load(file, Loader=SafeLoader)['msf_slam']
+
+    if(self.config_param is None):
+      print("Error loading config param msf slam")
+    else:
+      print("Config param msf slam:")
+      print(self.config_param)
+
+
+    # Parameters
+    #
+    self.robot_frame = self.config_param['robot_frame']
+    self.world_frame = self.config_param['world_frame']
+    #
+    self.state_estim_loop_freq = self.config_param['state_estim_loop_freq']
+    
+    #
+    self.msf_slam.setConfigParameters(self.config_param['ekf'])
+    self.msf_slam.world_frame = self.world_frame
 
     
     # End

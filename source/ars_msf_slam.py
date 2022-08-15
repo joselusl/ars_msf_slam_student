@@ -144,7 +144,6 @@ class ArsMsfSlam:
     self.estim_state_timestamp = rospy.Time()
     # Estmated Pose
     self.estim_robot_posi = np.zeros((3,), dtype=float)
-    self.estim_robot_posi[2] = 1.0
     self.estim_robot_atti_quat_simp = ars_lib_helpers.Quaternion.zerosQuatSimp()
     # Estimated Velocity
     self.estim_robot_velo_lin_world = np.zeros((3,), dtype=float)
@@ -155,10 +154,6 @@ class ArsMsfSlam:
     # Cov estimated state
     # Only robot from the beginning
     self.estim_state_cov = np.zeros((8,8), dtype=float)
-    self.estim_state_cov = np.diag([0.00001, 0.00001, 0.00001, 
-                                    100.0, 
-                                    0.01, 0.01, 0.01,
-                                    0.01])
 
     #
     self.lock_state = threading.Lock()
@@ -166,23 +161,48 @@ class ArsMsfSlam:
 
     # Covariance of the process model
     self.cov_proc_mod = np.zeros((4,4), dtype=float)
-    self.cov_proc_mod = np.diag([0.1, 0.1, 0.1, 
-                                    0.1])
 
     # Covariance meas attitude
-    self.cov_meas_atti = np.diag([0.05])
+    self.cov_meas_atti = np.zeros((1,1), dtype=float)
 
     # Covariance meas velocity
-    self.cov_meas_velo_lin = np.diag([0.01, 0.01, 0.01])
-    self.cov_meas_velo_ang = np.diag([0.01])
+    self.cov_meas_velo_lin = np.zeros((3,3), dtype=float)
+    self.cov_meas_velo_ang = np.zeros((1,1), dtype=float)
 
     # Covariance meas circle detected
-    self.cov_meas_circle_detected_robot = np.diag([0.0001, 0.0001, 0.000001,
-                                                    0.0001])
-
+    self.cov_meas_circle_detected_robot = np.zeros((4,4), dtype=float)
 
 
     # End
+    return
+
+
+  def setConfigParameters(self, config_param):
+
+    # Estmated Pose
+    self.estim_robot_posi = np.array(config_param['estimated_state_init']['state']['robot_position'])
+    self.estim_robot_atti_quat_simp = ars_lib_helpers.Quaternion.setQuatSimp(config_param['estimated_state_init']['state']['robot_atti_quat_simp'])
+    # Estimated Velocity
+    self.estim_robot_velo_lin_world = np.array(config_param['estimated_state_init']['state']['robot_vel_lin_world'])
+    self.estim_robot_velo_ang_world = np.array(config_param['estimated_state_init']['state']['robot_vel_ang_world'])
+
+    # Cov estimated state
+    self.estim_state_cov = np.diag(config_param['estimated_state_init']['cov_diag'])
+
+    # Covariance of the process model
+    self.cov_proc_mod = np.diag(config_param['process_model']['cov_diag'])
+
+    # Covariance meas attitude
+    self.cov_meas_atti = np.diag(config_param['measurements']['meas_attitude']['cov_diag'])
+
+    # Covariance meas velocity
+    self.cov_meas_velo_lin = np.diag(config_param['measurements']['meas_velo_lin']['cov_diag'])
+    self.cov_meas_velo_ang = np.diag(config_param['measurements']['meas_velo_ang']['cov_diag'])
+
+    # Covariance meas circle detected
+    self.cov_meas_circle_detected_robot = np.diag(config_param['measurements']['meas_circles_detector']['cov_diag'])
+
+
     return
 
 
