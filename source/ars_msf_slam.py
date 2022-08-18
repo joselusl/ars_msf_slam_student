@@ -122,6 +122,10 @@ class ArsMsfSlam:
     #
     self.world_frame = 'world'
 
+    # Meas Position
+    self.flag_set_meas_robot_posi = False
+    self.meas_robot_posi_timestamp = rospy.Time()
+    self.meas_robot_posi = np.zeros((3,), dtype=float)
     # Meas Attitude
     self.flag_set_meas_robot_atti = False
     self.meas_robot_atti_timestamp = rospy.Time()
@@ -162,6 +166,9 @@ class ArsMsfSlam:
     # Covariance of the process model
     self.cov_proc_mod = np.zeros((4,4), dtype=float)
 
+    # Covariance meas position
+    self.cov_meas_posi = np.zeros((3,3), dtype=float)
+
     # Covariance meas attitude
     self.cov_meas_atti = np.zeros((1,1), dtype=float)
 
@@ -192,6 +199,9 @@ class ArsMsfSlam:
     # Covariance of the process model
     self.cov_proc_mod = np.diag(config_param['process_model']['cov_diag'])
 
+    # Covariance meas position
+    self.cov_meas_posi = np.diag(config_param['measurements']['meas_position']['cov_diag'])
+
     # Covariance meas attitude
     self.cov_meas_atti = np.diag(config_param['measurements']['meas_attitude']['cov_diag'])
 
@@ -205,6 +215,20 @@ class ArsMsfSlam:
 
     return
 
+
+  def setMeasRobotPosition(self, timestamp, robot_posi):
+
+    self.lock_meas.acquire()
+
+    self.flag_set_meas_robot_posi = True
+
+    self.meas_robot_posi_timestamp = timestamp
+
+    self.meas_robot_posi = robot_posi
+
+    self.lock_meas.release()
+
+    return
 
   def setMeasRobotAttitude(self, timestamp, robot_atti_quat_simp):
 
@@ -397,6 +421,10 @@ class ArsMsfSlam:
 
     # Measurements readings - To avoid races
     #
+    flag_set_meas_robot_posi = self.flag_set_meas_robot_posi
+    if(flag_set_meas_robot_posi):
+      meas_z_robot_posi = self.meas_robot_posi
+    #
     flag_set_meas_robot_atti = self.flag_set_meas_robot_atti
     if(flag_set_meas_robot_atti):
       meas_z_robot_atti_quat_simp = self.meas_robot_atti_quat_simp
@@ -412,6 +440,9 @@ class ArsMsfSlam:
       num_meas_z_circles_detected = len(meas_z_circles_detected)
 
     # Put flags measurements down once used
+    if(self.flag_set_meas_robot_posi == True):
+      self.flag_set_meas_robot_posi = False
+
     if(self.flag_set_meas_robot_atti == True):
       self.flag_set_meas_robot_atti = False
 
@@ -429,6 +460,9 @@ class ArsMsfSlam:
     # Init
     dim_meas = 0
     
+    #
+    if(flag_set_meas_robot_posi == True):
+      dim_meas += 3
     #
     if(flag_set_meas_robot_atti == True):
       dim_meas += 1
@@ -521,6 +555,9 @@ class ArsMsfSlam:
     dim_meas_assoc = 0
     
     #
+    if(flag_set_meas_robot_posi == True):
+      dim_meas_assoc += 3
+    #
     if(flag_set_meas_robot_atti == True):
       dim_meas_assoc += 1
     #
@@ -539,6 +576,17 @@ class ArsMsfSlam:
     innov_meas = np.zeros((dim_meas_assoc,), dtype=float)
     innov_meas_idx = 0
     
+    if(flag_set_meas_robot_posi == True):
+      # Predicted measurement
+      # TODO BY STUDENT
+      # pred_z_robot_posi = 
+      # Innovation of the measurement
+      # TODO BY STUDENT
+      # innov_meas_robot_posi = 
+      # To the innovation vector
+      innov_meas[innov_meas_idx:innov_meas_idx+3] = innov_meas_robot_posi
+      innov_meas_idx += 3
+
     if(flag_set_meas_robot_atti == True):
       # Predicted measurement
       pred_z_robot_atti_quat_simp = estim_x_k1k_robot_atti_quat_simp
@@ -605,6 +653,10 @@ class ArsMsfSlam:
     cov_meas = np.zeros((dim_meas_assoc, dim_meas_assoc), dtype=float)
     cov_meas_idx = 0
     
+    if(flag_set_meas_robot_posi == True):
+      cov_meas[cov_meas_idx:cov_meas_idx+3, cov_meas_idx:cov_meas_idx+3] = self.cov_meas_posi
+      cov_meas_idx += 3
+
     if(flag_set_meas_robot_atti == True):
       cov_meas[cov_meas_idx:cov_meas_idx+1, cov_meas_idx:cov_meas_idx+1] = self.cov_meas_atti 
       cov_meas_idx += 1
@@ -627,6 +679,12 @@ class ArsMsfSlam:
     jac_Hx_meas_idx = 0
     #
     diff_mat_R_ang = ars_lib_helpers.Quaternion.diffRotMat3dWrtAngleFromAngle(estim_x_k1k_robot_atti_ang)
+
+    if(flag_set_meas_robot_posi == True):
+      # Meas robot posi - robot posi
+      # TODO BY STUDENT
+      # jac_Hx[jac_Hx_meas_idx:jac_Hx_meas_idx+3, 0:3] = 
+      jac_Hx_meas_idx += 3
 
     if(flag_set_meas_robot_atti == True):
       # Meas robot atti - robot atti

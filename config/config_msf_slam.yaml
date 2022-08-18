@@ -17,6 +17,8 @@ msf_slam:
       cov_diag: [1.0, 1.0, 1.0, 
             1.0]
     measurements:
+      meas_position:
+        cov_diag: [1.0, 1.0, 1.0]
       meas_attitude:
         cov_diag: [1.0]
       meas_velo_lin:

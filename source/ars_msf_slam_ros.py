@@ -69,6 +69,8 @@ class ArsMsfSlamRos:
   state_estim_loop_timer = None
 
 
+  # Meas Robot posi subscriber
+  meas_robot_posi_sub = None
   # Meas Robot atti subscriber
   meas_robot_atti_sub = None
   # Meas Robot velocity subscriber
@@ -90,9 +92,13 @@ class ArsMsfSlamRos:
   estim_map_world_pub = None
 
 
+  # tf2 broadcaster
+  tf2_broadcaster = None
+
+
   #
   config_param = None
-  
+
 
   # MSF SLAM
   msf_slam = None
@@ -114,7 +120,6 @@ class ArsMsfSlamRos:
 
     # SLAM component
     self.msf_slam = ArsMsfSlam()
-    self.msf_slam.world_frame = self.world_frame
 
 
     # end
@@ -177,6 +182,8 @@ class ArsMsfSlamRos:
     # Subscribers
 
     # 
+    self.meas_robot_posi_sub = rospy.Subscriber('meas_robot_position', PointStamped, self.measRobotPositionCallback)
+    # 
     self.meas_robot_atti_sub = rospy.Subscriber('meas_robot_attitude', QuaternionStamped, self.measRobotAttitudeCallback)
     #
     self.meas_robot_vel_robot_sub = rospy.Subscriber('meas_robot_velocity_robot', TwistStamped, self.measRobotVelRobotCallback)
@@ -227,6 +234,30 @@ class ArsMsfSlamRos:
 
     rospy.spin()
 
+    return
+
+
+  def measRobotPositionCallback(self, robot_position_msg):
+
+    # Timestamp
+    timestamp = robot_position_msg.header.stamp
+
+    # Position
+    robot_posi = np.zeros((3,), dtype=float)
+    robot_posi[0] = robot_position_msg.point.x
+    robot_posi[1] = robot_position_msg.point.y
+    robot_posi[2] = robot_position_msg.point.z
+
+    #
+    self.msf_slam.setMeasRobotPosition(timestamp, robot_posi)
+
+    # Predict
+    #self.msf_state_estimator.predict(timestamp)
+
+    # Update
+    #self.msf_state_estimator.update()
+
+    #
     return
 
 
