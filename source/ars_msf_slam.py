@@ -639,11 +639,11 @@ class ArsMsfSlam:
 
         # Innovation of the measurement
         # TODO BY STUDENT
-        #innov_meas_circle_detected_posi_world = 
+        #innov_meas_circle_detected_posi_robot = 
         #innov_meas_circle_detected_radi = 
 
         # To the innovation vector
-        innov_meas[innov_meas_idx:innov_meas_idx+3] = innov_meas_circle_detected_posi_world
+        innov_meas[innov_meas_idx:innov_meas_idx+3] = innov_meas_circle_detected_posi_robot
         innov_meas_idx += 3
         innov_meas[innov_meas_idx:innov_meas_idx+1] = innov_meas_circle_detected_radi
         innov_meas_idx += 1
