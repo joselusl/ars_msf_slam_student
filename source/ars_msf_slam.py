@@ -766,8 +766,8 @@ class ArsMsfSlam:
       delta_x_robot_velo_lin_world = delta_x[4:7]
       estim_x_k1k1_robot_velo_lin_world = estim_x_k1k_robot_velo_lin_world - delta_x_robot_velo_lin_world
       # Velocity angular
-      delta_x_robot_velo_lin_world = delta_x[7]
-      estim_x_k1k1_robot_velo_ang_world = estim_x_k1k_robot_velo_ang_world - delta_x_robot_velo_lin_world
+      delta_x_robot_velo_ang_world = delta_x[7]
+      estim_x_k1k1_robot_velo_ang_world = estim_x_k1k_robot_velo_ang_world - delta_x_robot_velo_ang_world
       
       # Map
       delta_x_idx = 8
