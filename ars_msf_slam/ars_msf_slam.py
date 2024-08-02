@@ -1,32 +1,25 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 from numpy import *
 
-import sys
-
-import os
-
 import threading
-
 
 import scipy
 from scipy.linalg import  *
 
 
 # ROS
+import rclpy
+from rclpy.time import Time
 
-import rospy
-
+import nav_msgs.msg
+from nav_msgs.msg import Path
 
 
 #
-import ars_lib_helpers
+import ars_lib_helpers.ars_lib_helpers as ars_lib_helpers
 
-
-
-# Print options
-#np.set_printoptions(linewidth=1000)
 
 
 
@@ -124,20 +117,20 @@ class ArsMsfSlam:
 
     # Meas Position
     self.flag_set_meas_robot_posi = False
-    self.meas_robot_posi_timestamp = rospy.Time()
+    self.meas_robot_posi_timestamp = Time()
     self.meas_robot_posi = np.zeros((3,), dtype=float)
     # Meas Attitude
     self.flag_set_meas_robot_atti = False
-    self.meas_robot_atti_timestamp = rospy.Time()
+    self.meas_robot_atti_timestamp = Time()
     self.meas_robot_atti_quat_simp = ars_lib_helpers.Quaternion.zerosQuatSimp()
     # Meas Velocity
     self.flag_set_meas_robot_vel_robot = False
-    self.meas_robot_velo_timestamp = rospy.Time()
+    self.meas_robot_velo_timestamp = Time()
     self.meas_robot_velo_lin_robot = np.zeros((3,), dtype=float)
     self.meas_robot_velo_ang_robot = np.zeros((1,), dtype=float)
     # Meas obstacles detected
     self.flag_set_meas_circles_detected = False
-    self.meas_circles_detected_timestamp = rospy.Time()
+    self.meas_circles_detected_timestamp = Time()
     # A of circle3D
     self.meas_circles_detected = []
 
@@ -145,7 +138,7 @@ class ArsMsfSlam:
     self.lock_meas = threading.Lock()
 
     # Estimated State
-    self.estim_state_timestamp = rospy.Time()
+    self.estim_state_timestamp = Time()
     # Estmated Pose
     self.estim_robot_posi = np.zeros((3,), dtype=float)
     self.estim_robot_atti_quat_simp = ars_lib_helpers.Quaternion.zerosQuatSimp()
@@ -284,10 +277,11 @@ class ArsMsfSlam:
 
     # Delta time
     delta_time = 0.0
-    if(self.estim_state_timestamp == rospy.Time()):
+    estim_state_timestamp = self.estim_state_timestamp.to_msg()
+    if(estim_state_timestamp.sec == 0 and estim_state_timestamp.nanosec == 0):
       delta_time = 0.0
     else:
-      delta_time = (timestamp - self.estim_state_timestamp).to_sec()
+      delta_time = (timestamp - self.estim_state_timestamp).nanoseconds/1e9
 
     #
     num_mapped_landmarks = len(self.estim_map_world)
@@ -776,7 +770,7 @@ class ArsMsfSlam:
         self.estim_map_world[map_element_i_idx].position = self.estim_map_world[map_element_i_idx].position - delta_x[delta_x_idx:delta_x_idx+3]
         delta_x_idx += 3
         #
-        self.estim_map_world[map_element_i_idx].circle_radius = self.estim_map_world[map_element_i_idx].circle_radius - delta_x[delta_x_idx:delta_x_idx+1]
+        self.estim_map_world[map_element_i_idx].circle_radius = (self.estim_map_world[map_element_i_idx].circle_radius - delta_x[delta_x_idx:delta_x_idx+1])[0]
         delta_x_idx += 1
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 from numpy import *
@@ -11,10 +11,11 @@ from yaml.loader import SafeLoader
 
 
 # ROS
+import rclpy
+from rclpy.node import Node
+from rclpy.time import Time
 
-import rospy
-
-import rospkg
+from ament_index_python.packages import get_package_share_directory
 
 import std_msgs.msg
 from std_msgs.msg import Header
@@ -34,25 +35,23 @@ from geometry_msgs.msg import TwistWithCovarianceStamped
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 
+from builtin_interfaces.msg import Duration
 
 
 import tf2_ros
 
 
-
+#
+from ars_msf_slam.ars_msf_slam import *
 
 #
-from ars_msf_slam import *
-
-
-#
-import ars_lib_helpers
+import ars_lib_helpers.ars_lib_helpers as ars_lib_helpers
 
 
 
 
 
-class ArsMsfSlamRos:
+class ArsMsfSlamRos(Node):
 
   #######
 
@@ -107,7 +106,9 @@ class ArsMsfSlamRos:
 
   #########
 
-  def __init__(self):
+  def __init__(self, node_name='ars_msf_slam_node'):
+    # Init ROS
+    super().__init__(node_name)
 
     # Robot frame
     self.robot_frame = 'robot_estim_base_link'
@@ -121,28 +122,32 @@ class ArsMsfSlamRos:
     # SLAM component
     self.msf_slam = ArsMsfSlam()
 
+    #
+    self.__init(node_name)
 
     # end
     return
 
 
-  def init(self, node_name='ars_msf_slam_node'):
-    #
-
-    # Init ROS
-    rospy.init_node(node_name, anonymous=True)
-
-    
+  def __init(self, node_name='ars_msf_slam_node'):
+        
     # Package path
-    pkg_path = rospkg.RosPack().get_path('ars_msf_slam')
+    try:
+      pkg_path = get_package_share_directory('ars_msf_slam')
+      self.get_logger().info(f"The path to the package is: {pkg_path}")
+    except ModuleNotFoundError:
+      self.get_logger().info("Package not found")
     
 
     #### READING PARAMETERS ###
     
     # Config param
     default_config_param_yaml_file_name = os.path.join(pkg_path,'config','config_msf_slam.yaml')
-    config_param_yaml_file_name_str = rospy.get_param('~config_param_msf_slam_yaml_file', default_config_param_yaml_file_name)
-    print(config_param_yaml_file_name_str)
+    # Declare the parameter with a default value
+    self.declare_parameter('config_param_msf_slam_yaml_file', default_config_param_yaml_file_name)
+    # Get the parameter value
+    config_param_yaml_file_name_str = self.get_parameter('config_param_msf_slam_yaml_file').get_parameter_value().string_value
+    self.get_logger().info(config_param_yaml_file_name_str)
     self.config_param_yaml_file_name = os.path.abspath(config_param_yaml_file_name_str)
 
     ###
@@ -155,10 +160,10 @@ class ArsMsfSlamRos:
         self.config_param = yaml.load(file, Loader=SafeLoader)['msf_slam']
 
     if(self.config_param is None):
-      print("Error loading config param msf slam")
+      self.get_logger().info("Error loading config param msf slam")
     else:
-      print("Config param msf slam:")
-      print(self.config_param)
+      self.get_logger().info("Config param msf slam:")
+      self.get_logger().info(str(self.config_param))
 
 
     # Parameters
@@ -182,13 +187,13 @@ class ArsMsfSlamRos:
     # Subscribers
 
     # 
-    self.meas_robot_posi_sub = rospy.Subscriber('meas_robot_position', PointStamped, self.measRobotPositionCallback)
+    self.meas_robot_posi_sub = self.create_subscription(PointStamped, 'meas_robot_position', self.measRobotPositionCallback, qos_profile=10)
     # 
-    self.meas_robot_atti_sub = rospy.Subscriber('meas_robot_attitude', QuaternionStamped, self.measRobotAttitudeCallback)
+    self.meas_robot_atti_sub = self.create_subscription(QuaternionStamped, 'meas_robot_attitude', self.measRobotAttitudeCallback, qos_profile=10)
     #
-    self.meas_robot_vel_robot_sub = rospy.Subscriber('meas_robot_velocity_robot', TwistStamped, self.measRobotVelRobotCallback)
+    self.meas_robot_vel_robot_sub = self.create_subscription(TwistStamped, 'meas_robot_velocity_robot', self.measRobotVelRobotCallback, qos_profile=10)
     # Obstacles detected
-    self.meas_obst_detected_robot_sub = rospy.Subscriber('obstacles_detected_robot', MarkerArray, self.measObstaclesDetectedRobotCallback)
+    self.meas_obst_detected_robot_sub = self.create_subscription(MarkerArray, 'obstacles_detected_robot', self.measObstaclesDetectedRobotCallback, qos_profile=10)
 
     
 
@@ -196,34 +201,34 @@ class ArsMsfSlamRos:
 
     # Pose robot wrt world
     # 
-    self.estim_robot_pose_pub = rospy.Publisher('estim_robot_pose', PoseStamped, queue_size=1)
+    self.estim_robot_pose_pub = self.create_publisher(PoseStamped, 'estim_robot_pose', qos_profile=10)
     # 
-    self.estim_robot_pose_cov_pub = rospy.Publisher('estim_robot_pose_cov', PoseWithCovarianceStamped, queue_size=1)
+    self.estim_robot_pose_cov_pub = self.create_publisher(PoseWithCovarianceStamped, 'estim_robot_pose_cov', qos_profile=10)
     
     # Velocity robot wrt robot
     #
-    self.estim_robot_vel_robot_pub = rospy.Publisher('estim_robot_velocity_robot', TwistStamped, queue_size=1)
+    self.estim_robot_vel_robot_pub = self.create_publisher(TwistStamped, 'estim_robot_velocity_robot', qos_profile=10)
     #
-    self.estim_robot_vel_robot_cov_pub = rospy.Publisher('estim_robot_velocity_robot_cov', TwistWithCovarianceStamped, queue_size=1)
+    self.estim_robot_vel_robot_cov_pub = self.create_publisher(TwistWithCovarianceStamped, 'estim_robot_velocity_robot_cov', qos_profile=10)
     
     # Velocity robot wrt world
     #
-    self.estim_robot_vel_world_pub = rospy.Publisher('estim_robot_velocity_world', TwistStamped, queue_size=1)
+    self.estim_robot_vel_world_pub = self.create_publisher(TwistStamped, 'estim_robot_velocity_world', qos_profile=10)
     #
-    self.estim_robot_vel_world_cov_pub = rospy.Publisher('estim_robot_velocity_world_cov', TwistWithCovarianceStamped, queue_size=1)
+    self.estim_robot_vel_world_cov_pub = self.create_publisher(TwistWithCovarianceStamped, 'estim_robot_velocity_world_cov', qos_profile=10)
     
     # Estim Map wrt world
     #
-    self.estim_map_world_pub = rospy.Publisher('estim_map_world', MarkerArray, queue_size=1)
+    self.estim_map_world_pub = self.create_publisher(MarkerArray, 'estim_map_world', qos_profile=10)
 
 
     # Tf2 broadcasters
-    self.tf2_broadcaster = tf2_ros.TransformBroadcaster()
+    self.tf2_broadcaster = tf2_ros.TransformBroadcaster(self)
 
 
     # Timers
     #
-    self.state_estim_loop_timer = rospy.Timer(rospy.Duration(1.0/self.state_estim_loop_freq), self.stateEstimLoopTimerCallback)
+    self.state_estim_loop_timer = self.create_timer(1.0/self.state_estim_loop_freq, self.stateEstimLoopTimerCallback)
 
 
     # End
@@ -232,7 +237,7 @@ class ArsMsfSlamRos:
 
   def run(self):
 
-    rospy.spin()
+    rclpy.spin(self)
 
     return
 
@@ -318,7 +323,7 @@ class ArsMsfSlamRos:
 
   def measObstaclesDetectedRobotCallback(self, meas_obstacles_detected_robot_msg):
 
-    timestamp = rospy.Time()
+    timestamp = Time()
     obstacles_detected = []
 
     for obstacle_detected_msg in meas_obstacles_detected_robot_msg.markers:
@@ -370,7 +375,7 @@ class ArsMsfSlamRos:
 
     #
     header_msg = Header()
-    header_msg.stamp = self.msf_slam.estim_state_timestamp
+    header_msg.stamp = self.msf_slam.estim_state_timestamp.to_msg()
     header_msg.frame_id = self.world_frame
 
     #
@@ -421,7 +426,7 @@ class ArsMsfSlamRos:
     # Tf2
     estim_robot_pose_tf2_msg = geometry_msgs.msg.TransformStamped()
 
-    estim_robot_pose_tf2_msg.header.stamp = self.msf_slam.estim_state_timestamp
+    estim_robot_pose_tf2_msg.header.stamp = self.msf_slam.estim_state_timestamp.to_msg()
     estim_robot_pose_tf2_msg.header.frame_id = self.world_frame
     estim_robot_pose_tf2_msg.child_frame_id = self.robot_frame
 
@@ -449,7 +454,7 @@ class ArsMsfSlamRos:
 
     # Header
     header_wrt_world_msg = Header()
-    header_wrt_world_msg.stamp = self.msf_slam.estim_state_timestamp
+    header_wrt_world_msg.stamp = self.msf_slam.estim_state_timestamp.to_msg()
     header_wrt_world_msg.frame_id = self.world_frame
 
     # Twist
@@ -485,7 +490,7 @@ class ArsMsfSlamRos:
 
     # Header
     header_wrt_robot_msg = Header()
-    header_wrt_robot_msg.stamp = self.msf_slam.estim_state_timestamp
+    header_wrt_robot_msg.stamp = self.msf_slam.estim_state_timestamp.to_msg()
     header_wrt_robot_msg.frame_id = self.robot_frame
 
     # Twist
@@ -538,7 +543,7 @@ class ArsMsfSlamRos:
 
 
         map_element_msg.header = Header()
-        map_element_msg.header.stamp = self.msf_slam.estim_state_timestamp
+        map_element_msg.header.stamp = self.msf_slam.estim_state_timestamp.to_msg()
         map_element_msg.header.frame_id = map_element.parent_frame
 
         map_element_msg.ns = 'estimated_map'
@@ -567,7 +572,8 @@ class ArsMsfSlamRos:
         map_element_msg.color.b = 0.75
         map_element_msg.color.a = 0.6
 
-        map_element_msg.lifetime = rospy.Duration(2.0*1.0/self.state_estim_loop_freq)
+        duration_in_sec = 2.0*1.0/self.state_estim_loop_freq
+        map_element_msg.lifetime = Duration(sec=int(duration_in_sec), nanosec=int((duration_in_sec-int(duration_in_sec))*1e9))
 
 
         estim_map_world_msg.markers.append(map_element_msg)
@@ -578,10 +584,10 @@ class ArsMsfSlamRos:
     return
 
 
-  def stateEstimLoopTimerCallback(self, timer_msg):
+  def stateEstimLoopTimerCallback(self):
 
     # Get time
-    time_stamp_current = rospy.Time.now()
+    time_stamp_current = self.get_clock().now()
 
     # Predict
     self.msf_slam.predict(time_stamp_current)

@@ -1,26 +1,38 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>ars_msf_slam</name>
   <version>0.0.1</version>
   <description>The ars_msf_slam</description>
 
   <maintainer email="joseluis.sanlop@gmail.com">Jose Luis SANCHEZ-LOPEZ</maintainer>
-  <author email="joseluis.sanlop@gmail.com">Jose Luis SANCHEZ-LOPEZ</author>
 
   <license>BSD</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <depend>rclpy</depend>
 
-  <exec_depend>rospy</exec_depend>
-  
+  <exec_depend>python-numpy</exec_depend>
+  <exec_depend>python-nvector</exec_depend>
+
+  <exec_depend>ament_python</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
-  <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
-
-  <exec_depend>python-rospkg</exec_depend>
+  <exec_depend>builtin_interfaces</exec_depend>
 
   <exec_depend>ars_lib_helpers</exec_depend>
+
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
 
 </package>
