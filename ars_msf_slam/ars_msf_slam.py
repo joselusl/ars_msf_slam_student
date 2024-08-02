@@ -467,6 +467,7 @@ class ArsMsfSlam:
     if(flag_set_meas_circles_detected == True):
       # TODO BY STUDENT
       # dim_meas += 
+      dim_meas
 
 
     # Check that there is at least one measurement
@@ -563,6 +564,7 @@ class ArsMsfSlam:
       for meas_circles_detected_associated_i_idx in meas_circles_detected_associated_idx:
         # TODO BY STUDENT
         # dim_meas_assoc += 
+        dim_meas_assoc
 
 
 
