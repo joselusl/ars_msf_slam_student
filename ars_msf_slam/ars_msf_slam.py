@@ -374,7 +374,7 @@ class ArsMsfSlam:
     jac_Fn_robot_robot_noise[7,3] = 1.0
 
     #
-    jac_Fn[0:8, 0:8] = jac_Fn_robot_robot_noise 
+    jac_Fn[0:8, 0:4] = jac_Fn_robot_robot_noise
     
 
     # Covariance
